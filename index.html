@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Меню смены цвета</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 100vh;
+            font-family: Arial, sans-serif;
+        }
+
+        .content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end; /* Кнопки внизу экрана */
+            align-items: center;
+            font-size: 24px;
+            color: black; /* Черный текст для белого фона */
+            padding: 20px;
+        }
+
+        .menu {
+            display: flex;
+            justify-content: space-around;
+            background-color: #333;
+            padding: 10px 0;
+        }
+
+        .menu button {
+            background-color: #555;
+            color: white;
+            border: none;
+            padding: 10px;
+            font-size: 24px;
+            cursor: pointer;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .menu button:hover {
+            background-color: #777;
+        }
+
+        .custom-button {
+            width: 90%;
+            padding: 15px;
+            background-color: transparent; /* Прозрачный фон */
+            color: black; /* Черный текст */
+            border: 1px solid black; /* Тонкий черный контур */
+            border-radius: 10px;
+            font-size: 18px;
+            cursor: pointer;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .custom-button:hover {
+            background-color: #f0f0f0; /* Легкий фон при наведении */
+        }
+
+        .hidden {
+            display: none; /* Скрыть кнопки */
+        }
+
+        /* Стили для диалогового окна */
+        .dialog-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .dialog {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 300px;
+            text-align: center;
+        }
+
+        .dialog input {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+        }
+
+        .dialog button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="content" id="content" style="background-color: white;">
+        <button class="custom-button" id="scanButton" onclick="scanQRCode()">СКАН</button>
+        <button class="custom-button" id="phoneButton" onclick="openPhoneNumberInput()">№ тел</button>
+    </div>
+
+    <div class="menu">
+        <button onclick="showButtons('white')">🏠</button> <!-- Домик -->
+        <button onclick="changeColor('red')">🚗</button> <!-- Машина -->
+        <button onclick="changeColor('green')">💼</button> <!-- Портфель -->
+        <button onclick="changeColor('yellow')">❤️</button> <!-- Сердце -->
+        <button onclick="changeColor('blue')">👤</button> <!-- Человек -->
+    </div>
+
+    <script>
+        // При загрузке страницы сразу показываем главный экран (домик)
+        window.onload = function () {
+            showButtons('white'); // Устанавливаем белый фон и показываем кнопки
+        };
+
+        function changeColor(color) {
+            const content = document.getElementById('content');
+            content.style.backgroundColor = color;
+            // Скрываем кнопки, если выбран не домик
+            document.getElementById('scanButton').classList.add('hidden');
+            document.getElementById('phoneButton').classList.add('hidden');
+        }
+
+        function showButtons(color) {
+            const content = document.getElementById('content');
+            content.style.backgroundColor = color;
+            // Показываем кнопки только для домика
+            document.getElementById('scanButton').classList.remove('hidden');
+            document.getElementById('phoneButton').classList.remove('hidden');
+        }
+
+        function scanQRCode() {
+            alert("Вызов камеры для сканирования QR-кода...");
+            // Здесь можно добавить логику для вызова камеры и сканирования QR-кода
+            // Например, с использованием библиотеки Instascan или ZXing
+        }
+
+        function openPhoneNumberInput() {
+            const dialogOverlay = document.createElement("div");
+            dialogOverlay.className = "dialog-overlay";
+            dialogOverlay.onclick = () => document.body.removeChild(dialogOverlay); // Закрытие при клике вне окна
+
+            const dialog = document.createElement("div");
+            dialog.className = "dialog";
+            dialog.onclick = (e) => e.stopPropagation(); // Предотвращаем закрытие при клике внутри окна
+
+            const input = document.createElement("input");
+            input.type = "text";
+            input.value = "+7 (";
+            input.style.width = "100%";
+            input.style.padding = "10px";
+            input.style.fontSize = "16px";
+            input.oninput = () => formatPhoneInput(input); // Применяем маску при вводе
+
+            const confirmButton = document.createElement("button");
+            confirmButton.textContent = "OK";
+            confirmButton.style.marginTop = "10px";
+            confirmButton.style.padding = "10px 20px";
+            confirmButton.style.fontSize = "16px";
+            confirmButton.onclick = () => {
+                if (input.value && /^\+7 \(\d{3}\) \d{3}-\d{2}-\d{2}$/.test(input.value)) {
+                    alert(`Вы ввели номер: ${input.value}`);
+                    document.body.removeChild(dialogOverlay);
+                } else {
+                    alert("Некорректный формат номера. Используйте маску: +7 (XXX) XXX-XX-XX");
+                }
+            };
+
+            dialog.appendChild(input);
+            dialog.appendChild(confirmButton);
+            dialogOverlay.appendChild(dialog);
+            document.body.appendChild(dialogOverlay);
+        }
+
+        // Функция для форматирования номера телефона
+        function formatPhoneInput(input) {
+            let value = input.value.replace(/\D/g, ''); // Удаляем все нецифровые символы
+            if (value.length > 0) {
+                value = "+7 (" + value.substring(1, 4) + ") " + value.substring(4, 7) + "-" + value.substring(7, 9) + "-" + value.substring(9, 11);
+            }
+            input.value = value; // Обновляем значение поля
+        }
+    </script>
+</body>
+</html>
