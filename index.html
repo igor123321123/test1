@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Меню смены цвета</title>
+    <style>
+        /* Основные стили */
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            font-family: Arial, sans-serif;
+        }
+
+        .content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+            padding: 20px;
+            background-color: white;
+        }
+
+        /* Стили меню */
+        .menu {
+            display: flex;
+            justify-content: space-around;
+            background: #333;
+            padding: 10px 0;
+        }
+
+        .menu button {
+            background: #555;
+            border: none;
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            font-size: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Кнопки действий */
+        .action-btn {
+            width: 90%;
+            padding: 15px;
+            margin-bottom: 10px;
+            background: transparent;
+            border: 1px solid black;
+            border-radius: 10px;
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        /* Сканер QR */
+        #qr-scanner {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: black;
+            display: none;
+            z-index: 1000;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #qr-scanner.active {
+            display: flex;
+        }
+
+        #qr-video {
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .close-scanner {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: red;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <!-- Основной контент -->
+    <div class="content" id="content">
+        <button class="action-btn" onclick="startScanner()">СКАН</button>
+        <button class="action-btn" onclick="showPhoneInput()">№ тел</button>
+    </div>
+
+    <!-- Нижнее меню -->
+    <div class="menu">
+        <button onclick="showHome()">🏠</button>
+        <button onclick="changeColor('red')">🚗</button>
+        <button onclick="changeColor('green')">💼</button>
+        <button onclick="changeColor('yellow')">❤️</button>
+        <button onclick="changeColor('blue')">👤</button>
+    </div>
+
+    <!-- Сканер QR -->
+    <div id="qr-scanner">
+        <video id="qr-video"></video>
+        <button class="close-scanner" onclick="stopScanner()">Закрыть</button>
+    </div>
+
+    <!-- Скрипты -->
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+    <script>
+        // Состояние приложения
+        let isScanning = false;
+        let currentStream = null;
+
+        // Инициализация при загрузке
+        window.addEventListener('load', () => {
+            showHome();
+        });
+
+        // Функции навигации
+        function showHome() {
+            document.getElementById('content').style.backgroundColor = 'white';
+            document.querySelectorAll('.action-btn').forEach(btn => btn.style.display = 'block');
+        }
+
+        function changeColor(color) {
+            document.getElementById('content').style.backgroundColor = color;
+            document.querySelectorAll('.action-btn').forEach(btn => btn.style.display = 'none');
+        }
+
+        // Работа со сканером
+        async function startScanner() {
+            try {
+                const scanner = document.getElementById('qr-scanner');
+                scanner.classList.add('active');
+                
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: "environment" }
+                });
+                
+                const video = document.getElementById('qr-video');
+                video.srcObject = stream;
+                video.play();
+                currentStream = stream;
+                
+                isScanning = true;
+                scanFrame(video);
+            } catch (error) {
+                alert(`Ошибка: ${error.message}`);
+                stopScanner();
+            }
+        }
+
+        function stopScanner() {
+            isScanning = false;
+            document.getElementById('qr-scanner').classList.remove('active');
+            
+            if (currentStream) {
+                currentStream.getTracks().forEach(track => track.stop());
+                currentStream = null;
+            }
+        }
+
+        function scanFrame(video) {
+            if (!isScanning) return;
+            
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0);
+            
+            const code = jsQR(context.getImageData(0, 0, canvas.width, canvas.height).data;
+            if (code) {
+                alert(`Найден QR-код: ${code}`);
+                stopScanner();
+            }
+            
+            requestAnimationFrame(() => scanFrame(video));
+        }
+
+        // Ввод телефона
+        function showPhoneInput() {
+            let input = '+7 (';
+            while (true) {
+                input = prompt('Введите номер:', input);
+                if (!input) break;
+                
+                if (/^\+7 \(\d{3}\) \d{3}-\d{2}-\d{2}$/.test(input)) {
+                    alert(`Введен номер: ${input}`);
+                    break;
+                } else {
+                    alert('Неверный формат! Пример: +7 (912) 345-67-89');
+                }
+            }
+        }
+    </script>
+</body>
+</html>
